@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block head_extra %}
+    <link type="text/css" rel="stylesheet" href="{% static 'news/css/news.css' %}">
+{% endblock %}
+
+{% block content %}
+    <section class="news-section">
+        <h1>Новости</h1>
+        <div class="news-container">
+
+            {% for item in news %}
+                {% if item.image %}
+                    <div class="news-item">
+                        <div class="news-image">
+                            <img src="{{ item.image.url }}" alt="{{ item.title }}">
+                        </div>
+                {% else %}
+                    <div class="news-item-no-img">
+                {% endif %}
+                    <div class="news-content">
+                        <h2>{{ item.title }}</h2>
+                        <p>{{ item.content }}</p>
+                    </div>   
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+    <div class="pagination">
+        <span class="step-links">
+            {% if news.has_previous %}
+                <a href="?page=1">&laquo; Первая</a>
+                <a href="?page={{ news.previous_page_number }}">Предыдущая</a>
+            {% endif %}
+    
+            <span class="current">
+                Страница {{ news.number }} из {{ news.paginator.num_pages }}.
+            </span>
+    
+            {% if news.has_next %}
+                <a href="?page={{ news.next_page_number }}">Следующая</a>
+                <a href="?page={{ news.paginator.num_pages }}">Последняя &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endblock %}
