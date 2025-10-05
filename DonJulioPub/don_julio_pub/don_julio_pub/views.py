@@ -8,3 +8,7 @@ def index(request: HttpRequest):
 
 def show_contacts(request: HttpRequest):
     return render(request, "don_julio_pub/contacts.html")
+
+
+def healthcheck(request: HttpRequest):
+    return render(request, "don_julio_pub/ping.html")
