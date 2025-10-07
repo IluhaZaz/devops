@@ -1,0 +1,79 @@
+name: Deploy Application
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
+        
+    - name: Setup SSH
+      uses: webfactory/ssh-agent@v0.8.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add server to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan -H -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+        cat ~/.ssh/known_hosts
+        
+    - name: Deploy to server
+      run: |
+        ssh -p ${{ secrets.SERVER_PORT }} -o BatchMode=yes ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          
+          echo 'Storing current branch for rollback if needed'
+          CURRENT_BRANCH=\$(git branch --show-current)
+          echo \"Current branch: \$CURRENT_BRANCH\"
+          
+          echo 'Fetching latest changes...'
+          git fetch --all
+          
+          echo 'Checking out target branch: ${{ github.ref_name }}'
+          git checkout ${{ github.ref_name }}
+          
+          echo 'Pulling latest changes...'
+          git pull origin ${{ github.ref_name }}
+          
+          echo 'Creating virtual environment...'
+          python -m venv venv || true
+          source venv/bin/activate
+          
+          echo 'Installing dependencies...'
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+          echo 'Running migrations...'
+          python don_julio_pub/manage.py migrate
+          
+          echo 'Restarting application service...'
+          sudo systemctl restart donjulio
+          
+          echo 'Checking service status...'
+          sudo systemctl status donjulio --no-pager
+          
+          echo 'Deployment completed successfully!'
+        "
+        
+    - name: Verify deployment
+      run: |
+        ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          # Wait a moment for the service to start
+          sleep 5
+          
+          # Check if service is running
+          if systemctl is-active --quiet donjulio; then
+            echo 'Service is running successfully'
+          else
+            echo 'Service failed to start'
+            exit 1
+          fi
+        "
