@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: ghcr.io/iluhazaz/devops:latest
+    command: sh -c "python don_julio_pub/manage.py migrate && python don_julio_pub/manage.py runserver 0.0.0.0:8181"
+    volumes:
+      - .:/app
+    ports:
+      - "8181:8181"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_NAME=Pub
+      - DB_USER=postgres
+      - DB_PASS=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+    restart: always
+
+volumes:
+  db_data:
