@@ -1,13 +1,11 @@
-version: "3.9"
 services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASS}
       POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -26,13 +24,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
-      DB_HOST: db
-      DB_PORT: 5432
-
+    env_file:
+    - .env
     restart: always
 
 volumes:
