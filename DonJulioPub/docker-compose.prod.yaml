@@ -16,6 +16,7 @@ services:
 
   web:
     image: ghcr.io/iluhazaz/devops:latest
+    pull_policy: always
     command: sh -c "python don_julio_pub/manage.py migrate && python don_julio_pub/manage.py runserver 0.0.0.0:8181"
     volumes:
       - .:/app
